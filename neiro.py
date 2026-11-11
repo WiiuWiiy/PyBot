@@ -21,9 +21,8 @@ with open('key.txt', 'r', encoding='utf-8') as f:
 
 dp = Dispatcher()
 router = Router()
-FPATTERN = r'^Где\s+(.+?)\s+(\d+)$'
-PATTERN = r'^Где\s+(.+?)'
-
+PATTERN = re.compile(r'^Где\s+(.+?)', re.I)
+FPATTERN = re.compile(r'^Где\s+(.+?)\s+(\d+)$', re.I)
 
 @dp.message(F.text.regexp(FPATTERN).as_("match"))
 async def handle_query(message: Message, match: re.Match):
