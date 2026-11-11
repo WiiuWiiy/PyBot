@@ -12,8 +12,7 @@ from aiogram.types import Message
 with open('key.env', 'r', encoding='utf-8') as f:
     TOKEN = f.read().strip()
 with open('id.env', 'r', encoding='utf-8') as m:
-    DEVID = f.read().strip()
-
+    DEVID = m.read().strip()
 
 # Регулярка:
 # ^Где\s+     — начало строки, слово "Где" и пробелы
