@@ -9,6 +9,7 @@ from aiogram.enums import ParseMode
 from aiogram.filters import CommandStart
 from aiogram.types import Message
 
+#Получение токена бота, а так же получение данных о админе
 with open('key.env', 'r', encoding='utf-8') as f:
     TOKEN = f.read().strip()
 with open('id.env', 'r', encoding='utf-8') as m:
@@ -33,11 +34,26 @@ with open('id.env', 'r', encoding='utf-8') as m:
 
 dp = Dispatcher()
 router = Router()
+
+#Прообразы ввода, для чистоты кода
 PATTERN = re.compile(r'^Где\s+(.+?)$', re.I)
 FPATTERN = re.compile(r'^Где\s+(.+?)\s+(\d+)$', re.I)
+THIS = re.compile(r'^Это\s+(.+?)$', re.I)
+FTHIS = re.compile(r'^Это\s+(.+?)\s+(\d+)$', re.I)
 
 async def on_startup(bot: Bot) -> None:
     await bot.send_message(chat_id=DEVID, text="System: ONLINE")
+
+@dp.message(F.text.regexp(THIS).as_("match"))
+async def handle_query(message: Message, match: re.Match):
+    param1 = match.group(1)
+    await message.answer(f"Фиксирую: <b>{param1}</b>")
+
+@dp.message(F.text.regexp(FTHIS).as_("match"))
+async def handle_query(message: Message, match: re.Match):
+    param1 = match.group(1)
+    param2 = int(match.group(2))
+    await message.answer(f"фиксирую: <b>{param1}</b>, число: <b>{param2}</b>")
 
 @dp.message(F.text.regexp(FPATTERN).as_("match"))
 async def handle_query(message: Message, match: re.Match):
@@ -64,7 +80,7 @@ async def echo_handler(message: Message) -> None:
     if message.from_user.id == DEVID:
         await message.answer("Бать, я не понял")
     else:
-        await message.answer("I missunderstood you.")
+        await message.answer("I misunderstood you.")
 
 async def main() -> None:
     bot = Bot(token=TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
