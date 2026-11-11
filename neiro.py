@@ -20,6 +20,7 @@ with open('key.txt', 'r', encoding='utf-8') as f:
 # $           — конец строки
 
 dp = Dispatcher()
+router = Router()
 PATTERN = r'^Где\s+"([^"]+)"\s+(\d+)$'
 
 @dp.message(F.text.regexp(PATTERN).as_("match"))
@@ -42,4 +43,5 @@ async def main() -> None:
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO, stream=sys.stdout)
+    dp.include_router(router)          
     asyncio.run(main())
