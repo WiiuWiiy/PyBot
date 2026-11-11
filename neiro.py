@@ -48,7 +48,7 @@ async def admin_stop(message: Message):
 @dp.message()
 async def echo_handler(message: Message) -> None:
     try:
-        if (F.from_user.id = DEVID):
+        if (F.from_user.id == DEVID):
             await message.answer("Бать, я не понял")
         else
             await message.answer("I missunderstood you.")
