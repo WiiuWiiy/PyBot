@@ -12,7 +12,7 @@ from aiogram.types import Message
 with open('key.env', 'r', encoding='utf-8') as f:
     TOKEN = f.read().strip()
 with open('id.env', 'r', encoding='utf-8') as m:
-    DEVID = m.read().strip()
+    DEVID = int(m.read())
 
 # Регулярка:
 # ^Где\s+     — начало строки, слово "Где" и пробелы
@@ -40,18 +40,23 @@ async def handle_query(message: Message, match: re.Match):
     param1 = match.group(1)
     await message.answer(f"Ищу: <b>{param1}</b>")
 
-@router.message(F.text.lower() == "помошь")
-async def text_menu(message: Message):
-    await message.answer("Ты мне где, а я запомню. Просто индексация, без фокусов.")
-
 @router.message(F.from_user.id == DEVID, F.text == "ребут")
 async def admin_stop(message: Message):
     await message.answer("System: REBOOT SEQUENCE")
     await dp.stop_polling()
 
+@dp.message()
+async def echo_handler(message: Message) -> None:
+    try:
+        if (F.from_user.id = DEVID):
+            await message.answer("Бать, я не понял")
+        else
+            await message.answer("I missunderstood you.")
+
 @dp.message(CommandStart())
 async def command_start_handler(message: Message) -> None:
     await message.answer("Приветики!")
+
 @dp.message(message: Message)
     await message.answer("попробуй ещё раз?")
 
