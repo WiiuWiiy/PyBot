@@ -33,7 +33,6 @@ async def handle_query(message: Message, match: re.Match):
 @dp.message(F.text.regexp(PATTERN).as_("match"))
 async def handle_query(message: Message, match: re.Match):
     param1 = match.group(1)
-    param2 = int(match.group(2))
     await message.answer(f"Ищу: <b>{param1}</b>")
 
 @router.message(F.text.lower() == "меню")
