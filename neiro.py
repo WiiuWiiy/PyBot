@@ -27,7 +27,7 @@ PATTERN = re.compile(r'^Где\s+(.+?)$', re.I)
 FPATTERN = re.compile(r'^Где\s+(.+?)\s+(\d+)$', re.I)
 
 async def on_startup(bot: Bot) -> None:
-    await bot.send_message(chat_id=950954140, text="Запуск прошёл без проишествий")
+    await bot.send_message(chat_id=DEVID, text="System: ONLINE")
 
 @dp.message(F.text.regexp(FPATTERN).as_("match"))
 async def handle_query(message: Message, match: re.Match):
@@ -40,13 +40,13 @@ async def handle_query(message: Message, match: re.Match):
     param1 = match.group(1)
     await message.answer(f"Ищу: <b>{param1}</b>")
 
-@router.message(F.text.lower() == "меню")
+@router.message(F.text.lower() == "помошь")
 async def text_menu(message: Message):
-    await message.answer("Вы написали 'меню' без слэша, и я отреагировал!")
+    await message.answer("Ты мне где, а я запомню. Просто индексация, без фокусов.")
 
-@router.message(F.text.lower() == "ребут")
-async def text_menu(message: Message):
-    await message.answer("Перезапуск принят")
+@router.message(F.from_user.id == DEVID, F.text == "ребут")
+async def admin_stop(message: Message):
+    await message.answer("System: REBOOT SEQUENCE")
     await dp.stop_polling()
 
 @dp.message(CommandStart())
