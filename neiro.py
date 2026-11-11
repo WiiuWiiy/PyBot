@@ -26,41 +26,40 @@ dp = Dispatcher()
 router = Router()
 PATTERN = re.compile(r'^Где\s+(.+?)$', re.I)
 FPATTERN = re.compile(r'^Где\s+(.+?)\s+(\d+)$', re.I)
-try:
-    async def on_startup(bot: Bot) -> None:
-        await bot.send_message(chat_id=950954140, text="Запуск прошёл без проишествий")
-    
-    @dp.message(F.text.regexp(FPATTERN).as_("match"))
-    async def handle_query(message: Message, match: re.Match):
-        param1 = match.group(1)
-        param2 = int(match.group(2))
-        await message.answer(f"Ищу: <b>{param1}</b>, число: <b>{param2}</b>")
-    
-    @dp.message(F.text.regexp(PATTERN).as_("match"))
-    async def handle_query(message: Message, match: re.Match):
-        param1 = match.group(1)
-        await message.answer(f"Ищу: <b>{param1}</b>")
-    
-    @router.message(F.text.lower() == "меню")
-    async def text_menu(message: Message):
-        await message.answer("Вы написали 'меню' без слэша, и я отреагировал!")
-    
-    @router.message(F.text.lower() == "ребут")
-    async def text_menu(message: Message):
-        await message.answer("Перезапуск принят")
-        await dp.stop_polling()
-    
-    @dp.message(CommandStart())
-    async def command_start_handler(message: Message) -> None:
-        await message.answer("Приветики!")
-    
-    async def main() -> None:
-        bot = Bot(token=TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
-        await dp.start_polling(bot)
-    
-    if __name__ == "__main__":
-        logging.basicConfig(level=logging.INFO, stream=sys.stdout)
-        dp.startup.register(on_startup)
-        dp.include_router(router)          
-        asyncio.run(main())
-finally: await bot.send_message(chat_id=950954140, text="Бот отвалился");
+
+async def on_startup(bot: Bot) -> None:
+    await bot.send_message(chat_id=950954140, text="Запуск прошёл без проишествий")
+
+@dp.message(F.text.regexp(FPATTERN).as_("match"))
+async def handle_query(message: Message, match: re.Match):
+    param1 = match.group(1)
+    param2 = int(match.group(2))
+    await message.answer(f"Ищу: <b>{param1}</b>, число: <b>{param2}</b>")
+
+@dp.message(F.text.regexp(PATTERN).as_("match"))
+async def handle_query(message: Message, match: re.Match):
+    param1 = match.group(1)
+    await message.answer(f"Ищу: <b>{param1}</b>")
+
+@router.message(F.text.lower() == "меню")
+async def text_menu(message: Message):
+    await message.answer("Вы написали 'меню' без слэша, и я отреагировал!")
+
+@router.message(F.text.lower() == "ребут")
+async def text_menu(message: Message):
+    await message.answer("Перезапуск принят")
+    await dp.stop_polling()
+
+@dp.message(CommandStart())
+async def command_start_handler(message: Message) -> None:
+    await message.answer("Приветики!")
+
+async def main() -> None:
+    bot = Bot(token=TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
+    await dp.start_polling(bot)
+
+if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO, stream=sys.stdout)
+    dp.startup.register(on_startup)
+    dp.include_router(router)          
+    asyncio.run(main())
