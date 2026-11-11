@@ -21,13 +21,21 @@ with open('key.txt', 'r', encoding='utf-8') as f:
 
 dp = Dispatcher()
 router = Router()
-PATTERN = r'^Где\s+(.+?)\s+(\d+)$'
+FPATTERN = r'^Где\s+(.+?)\s+(\d+)$'
+PATTERN = r'^Где\s+(.+?)'
+
+
+@dp.message(F.text.regexp(FPATTERN).as_("match"))
+async def handle_query(message: Message, match: re.Match):
+    param1 = match.group(1)
+    param2 = int(match.group(2))
+    await message.answer(f"Ищу: <b>{param1}</b>, число: <b>{param2}</b>")
 
 @dp.message(F.text.regexp(PATTERN).as_("match"))
 async def handle_query(message: Message, match: re.Match):
     param1 = match.group(1)
     param2 = int(match.group(2))
-    await message.answer(f"Ищу: <b>{param1}</b>, число: <b>{param2}</b>")
+    await message.answer(f"Ищу: <b>{param1}</b>")
 
 @router.message(F.text.lower() == "меню")
 async def text_menu(message: Message):
