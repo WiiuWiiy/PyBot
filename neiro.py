@@ -39,7 +39,7 @@ async def handle_query(message: Message, match: re.Match):
 async def text_menu(message: Message):
     await message.answer("Вы написали 'меню' без слэша, и я отреагировал!")
 
-@router.message(F.text.lower() == "рестарт")
+@router.message(F.text.lower() == "ребут")
 async def text_menu(message: Message):
     await message.answer("Перезапуск принят")
     await dp.stop_polling()
