@@ -50,7 +50,6 @@ async def text_menu(message: Message):
 @dp.message(CommandStart())
 async def command_start_handler(message: Message) -> None:
     await message.answer("Приветики!")
-@dp.message(OnStart())
 
 async def main() -> None:
     bot = Bot(token=TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
