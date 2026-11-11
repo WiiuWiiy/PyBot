@@ -23,7 +23,7 @@ with open('id.env', 'r', encoding='utf-8') as m:
 
 dp = Dispatcher()
 router = Router()
-PATTERN = re.compile(r'^Где\s+(.+?)$', re.I)
+PATTERN = re.compile(r'^Где\s+(.+?)\s+', re.I)
 FPATTERN = re.compile(r'^Где\s+(.+?)\s+(\d+)$', re.I)
 
 async def on_startup(bot: Bot) -> None:
@@ -52,6 +52,8 @@ async def admin_stop(message: Message):
 @dp.message(CommandStart())
 async def command_start_handler(message: Message) -> None:
     await message.answer("Приветики!")
+@dp.message(message: Message)
+    await message.answer("попробуй ещё раз?")
 
 async def main() -> None:
     bot = Bot(token=TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
