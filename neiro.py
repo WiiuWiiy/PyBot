@@ -28,6 +28,10 @@ async def handle_query(message: Message, match: re.Match):
     param2 = int(match.group(2))
     await message.answer(f"Ищу: <b>{param1}</b>, число: <b>{param2}</b>")
 
+@router.message(F.text.lower() == "меню")
+async def text_menu(message: Message):
+    await message.answer("Вы написали 'меню' без слэша, и я отреагировал!")
+
 @dp.message(CommandStart())
 async def command_start_handler(message: Message) -> None:
     await dp.stop_polling()
