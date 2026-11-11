@@ -3,7 +3,7 @@ import logging
 import re
 import sys
 
-from aiogram import Bot, Dispatcher, F, html
+from aiogram import Bot, Dispatcher, Router, F, html
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 from aiogram.filters import CommandStart
