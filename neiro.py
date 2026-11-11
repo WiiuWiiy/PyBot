@@ -23,7 +23,7 @@ with open('id.env', 'r', encoding='utf-8') as m:
 
 dp = Dispatcher()
 router = Router()
-PATTERN = re.compile(r'^Где\s+(.+?)\s+', re.I)
+PATTERN = re.compile(r'^Где\s+(.+?)$', re.I)
 FPATTERN = re.compile(r'^Где\s+(.+?)\s+(\d+)$', re.I)
 
 async def on_startup(bot: Bot) -> None:
@@ -40,7 +40,7 @@ async def handle_query(message: Message, match: re.Match):
     param1 = match.group(1)
     await message.answer(f"Ищу: <b>{param1}</b>")
 
-@dp.message(message.from_user.id == DEVID, F.text == "ребут")
+@dp.message(F.from_user.id == DEVID, F.text == "ребут")
 async def admin_stop(message: Message):
     await message.answer("System: REBOOT SEQUENCE")
     await dp.stop_polling()
@@ -59,7 +59,7 @@ async def echo_handler(message: Message) -> None:
 async def main() -> None:
     bot = Bot(token=TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
     await dp.start_polling(bot)
-    
+
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO, stream=sys.stdout)
     dp.startup.register(on_startup)
