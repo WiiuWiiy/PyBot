@@ -24,6 +24,9 @@ router = Router()
 PATTERN = re.compile(r'^Где\s+(.+?)$', re.I)
 FPATTERN = re.compile(r'^Где\s+(.+?)\s+(\d+)$', re.I)
 
+async def on_startup(bot: Bot) -> None:
+    await bot.send_message(chat_id=950954140, text="Запуск прошёл без проишествий")
+
 @dp.message(F.text.regexp(FPATTERN).as_("match"))
 async def handle_query(message: Message, match: re.Match):
     param1 = match.group(1)
@@ -47,6 +50,7 @@ async def text_menu(message: Message):
 @dp.message(CommandStart())
 async def command_start_handler(message: Message) -> None:
     await message.answer("Приветики!")
+@dp.message(OnStart())
 
 async def main() -> None:
     bot = Bot(token=TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
@@ -54,5 +58,6 @@ async def main() -> None:
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO, stream=sys.stdout)
+    dp.startup.register(on_startup)
     dp.include_router(router)          
     asyncio.run(main())
