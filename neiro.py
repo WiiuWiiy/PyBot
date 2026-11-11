@@ -50,7 +50,7 @@ async def echo_handler(message: Message) -> None:
     try:
         if (F.from_user.id == DEVID):
             await message.answer("Бать, я не понял")
-        else
+        else:
             await message.answer("I missunderstood you.")
 
 @dp.message(CommandStart())
