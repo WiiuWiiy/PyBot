@@ -28,14 +28,9 @@ async def handle_query(message: Message, match: re.Match):
     param2 = int(match.group(2))
     await message.answer(f"Ищу: <b>{param1}</b>, число: <b>{param2}</b>")
 
-@dp.message(Command("stop"))
-async def stop_bot(message: Message):
-    await message.answer("Выключаюсь...")
-    await dp.stop_polling()
-
 @dp.message(CommandStart())
 async def command_start_handler(message: Message) -> None:
-    await message.answer("Запуск")
+    await dp.stop_polling()
 
 async def main() -> None:
     bot = Bot(token=TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
