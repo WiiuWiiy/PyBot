@@ -9,7 +9,7 @@ from aiogram.enums import ParseMode
 from aiogram.filters import CommandStart
 from aiogram.types import Message
 
-with open('key.enc', 'r', encoding='utf-8') as f:
+with open('key.env', 'r', encoding='utf-8') as f:
     TOKEN = f.read().strip()
 with open('id.env', 'r', encoding='utf-8') as m:
     DEVID = f.read().strip()
