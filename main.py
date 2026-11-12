@@ -1,19 +1,22 @@
+pip install -r req.txt --upgrade
+
 import asyncio
 import logging
 import re
 import sys
+import os
 
 from aiogram import Bot, Dispatcher, Router, F, html
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 from aiogram.filters import CommandStart
 from aiogram.types import Message
+from dotenv import load_dotenv
 
-#Получение токена бота, а так же получение данных о админе
-with open('key.env', 'r', encoding='utf-8') as f:
-    TOKEN = f.read().strip()
-with open('id.env', 'r', encoding='utf-8') as m:
-    DEVID = int(m.read())
+load_dotenv()
+
+TOKEN = os.getenv("key")
+DEVID = os.getenv("id")
 
 # Регулярка:
 # ^Где\s+     — начало строки, слово "Где" и пробелы
