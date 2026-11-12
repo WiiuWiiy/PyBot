@@ -17,65 +17,75 @@ media_groups = {}  # временное хранилище
 load_dotenv()
 
 TOKEN = os.getenv("key")
-DEVID = int(os.getenv("id"))
+DEV_ID = int(os.getenv("id"))
 
 dp = Dispatcher()
 router = Router()
 
-PATTERN = re.compile(r'^Где\s+(.+?)$', re.I)
-FPATTERN = re.compile(r'^Где\s+(.+?)\s+(\d+)$', re.I)
-THIS = re.compile(r'^Это\s+(.+?)$', re.I)
-FTHIS = re.compile(r'^Это\s+(.+?)\s+(\d+)$', re.I)
+PATTERN  = re.compile(r'^Где\s+(\S+)$',        re.I)
+FPATTERN = re.compile(r'^Где\s+(\S+)\s+(\d+)$', re.I)
+THIS     = re.compile(r'^Это\s+(\S+)$',        re.I)
+FTHIS    = re.compile(r'^Это\s+(\S+)\s+(\d+)$', re.I)
 
 #Start
 async def on_startup(bot: Bot) -> None:
-    await bot.send_message(chat_id=DEVID, text="System: ONLINE")
+    await bot.send_message(chat_id=DEV_ID, text="Готов к работе!")
 
-@dp.message(F.text == "кто я")
+@router.message(F.text == "кто я")
 async def who_am_i(message: Message, bot: Bot):
-    is_admin = message.from_user.id == DEVID
-    status = "ADMIN" if is_admin else "USER"
+    is_admin = message.from_user.id == DEV_ID
+    status = "Право имеющий" if is_admin else "Чудо"
     await bot.send_message(
         chat_id=message.chat.id,
         text=f"{status}",
         receiver_user_id=message.from_user.id,
     )
 
-@dp.message(F.photo)
+@router.message(F.photo)
 async def handle_photo(message: Message):
     if message.media_group_id:
         await message.answer(f"Это группа фоток, их id{message.media_group_id}")
     else:
         await message.answer("Хочешь добавить его в базу данных?")
 
-@dp.message(F.text.regexp(FTHIS).as_("match"))
-async def handle_query(message: Message, match: re.Match):
+@router.message(F.text.regexp(FTHIS).as_("match"))
+async def handle_query(message: Message, match: re.Match, bot: Bot):
+    if message.reply_to_message is not None:
+        param1 = match.group(1)
+        param2 = int(match.group(2))
+        await message.answer(f"фиксирую: <b>{param1}</b>, число: <b>{param2}</b>")
+
+@router.message(F.text.regexp(THIS).as_("match"))
+async def handle_query(message: Message, match: re.Match, bot: Bot):
+    if message.reply_to_message is not None:
+        param1 = match.group(1)
+        await message.answer(f"Фиксирую: <b>{param1}</b>")
+
+@router.message(F.text.regexp(FPATTERN).as_("match"))
+async def handle_query(message: Message, match: re.Match, bot: Bot):
     param1 = match.group(1)
     param2 = int(match.group(2))
-    await message.answer(f"фиксирую: <b>{param1}</b>, число: <b>{param2}</b>")
+    await bot.send_message(
+        chat_id=message.chat.id,
+        text=f"Ищу {param1}, по индексу {param2}, message_id {message.message_id}",
+        receiver_user_id=message.from_user.id,
+    )
 
-@dp.message(F.text.regexp(THIS).as_("match"))
-async def handle_query(message: Message, match: re.Match):
+@router.message(F.text.regexp(PATTERN).as_("match"))
+async def handle_query(message: Message, match: re.Match, bot: Bot):
     param1 = match.group(1)
-    await message.answer(f"Фиксирую: <b>{param1}</b>")
+    await bot.send_message(
+        chat_id=message.chat.id,
+        text=f"Ищу {param1}",
+        receiver_user_id=message.from_user.id,
+    )
 
-@dp.message(F.text.regexp(FPATTERN).as_("match"))
-async def handle_query(message: Message, match: re.Match):
-    param1 = match.group(1)
-    param2 = int(match.group(2))
-    await message.answer(f"Ищу: <b>{param1}</b>, число: <b>{param2}</b>")
-
-@dp.message(F.text.regexp(PATTERN).as_("match"))
-async def handle_query(message: Message, match: re.Match):
-    param1 = match.group(1)
-    await message.answer(f"Ищу: <b>{param1}</b>")
-
-@dp.message(F.from_user.id == DEVID, F.text == "ребут")
+@router.message(F.from_user.id == DEV_ID, F.text == "ребут")
 async def admin_stop(message: Message):
     await message.answer("System: REBOOT SEQUENCE")
     await dp.stop_polling()
 
-@dp.message(CommandStart())
+@router.message(CommandStart())
 async def command_start_handler(message: Message) -> None:
     await message.answer(f"Приветики!, я работаю)")
 
@@ -90,13 +100,6 @@ if __name__ == "__main__":
     asyncio.run(main())
 
 
-
-# Регулярка:
-# ^Где\s+     — начало строки, слово "Где" и пробелы
-# "([^"]+)"   — 1-я группа: текст в кавычках (параметр1)
-# \s+         — пробелы
-# (\d+)       — 2-я группа: целое число (ЧисленныйПараметр2)
-# $           — конец строки
 
 #образно, логика работы бота такая:
 #приходит сообщение с файлами, или с изображением.
