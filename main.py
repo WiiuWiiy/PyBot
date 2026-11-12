@@ -30,6 +30,13 @@ FTHIS = re.compile(r'^Это\s+(.+?)\s+(\d+)$', re.I)
 #Start
 async def on_startup(bot: Bot) -> None:
     await bot.send_message(chat_id=DEVID, text="System: ONLINE")
+@dp.message(F.text == "кто я")
+async def handle_query(message: Message):
+    if (F.from_user.id == DEVID):
+        status = "ADMIN"
+    else:
+        status = "USER"
+    await message.answer(f"{status}")
 
 @dp.message(F.photo)
 async def handle_photo(message: Message):
@@ -67,18 +74,7 @@ async def admin_stop(message: Message):
 
 @dp.message(CommandStart())
 async def command_start_handler(message: Message) -> None:
-    if (F.from_user.id == DEVID):
-        status = "Admin"
-    else:
-        status = "User"
-    await message.answer(f"Приветики!, твой статус: {status}")
-
-@dp.message()
-async def echo_handler(message: Message) -> None:
-    if message.from_user.id == DEVID:
-        await message.answer("Бать, я не понял")
-    else:
-        await message.answer("I misunderstood you.")
+    await message.answer(f"Приветики!, я работаю)")
 
 async def main() -> None:
     bot = Bot(token=TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
