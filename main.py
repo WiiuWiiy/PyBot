@@ -32,12 +32,9 @@ async def on_startup(bot: Bot) -> None:
     await bot.send_message(chat_id=DEVID, text="System: ONLINE")
 
 @dp.message(F.text == "кто я")
-async def handle_query(message: Message, bot: Bot):
-    if (F.from_user.id == DEVID):
-        status = "ADMIN"
-    else:
-        status = "USER"
-    
+async def who_am_i(message: Message, bot: Bot):
+    is_admin = message.from_user.id == DEVID
+    status = "ADMIN" if is_admin else "USER"
     await bot.send_message(
         chat_id=message.chat.id,
         text=f"{status}",
