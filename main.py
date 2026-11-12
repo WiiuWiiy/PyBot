@@ -14,7 +14,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 TOKEN = os.getenv("key")
-DEVID = os.getenv("id")
+DEVID = int(os.getenv("id"))
 
 # Регулярка:
 # ^Где\s+     — начало строки, слово "Где" и пробелы
@@ -74,7 +74,11 @@ async def admin_stop(message: Message):
 
 @dp.message(CommandStart())
 async def command_start_handler(message: Message) -> None:
-    await message.answer("Приветики!")
+    if (F.from_user.id == DEVID):
+        status = "Admin"
+    else:
+        status = "User"
+    await message.answer(f"Приветики!, твой статус: {status}")
 @dp.message()
 
 async def echo_handler(message: Message) -> None:
