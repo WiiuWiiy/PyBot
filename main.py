@@ -9,7 +9,7 @@ from aiogram import Bot, Dispatcher, Router, F, html
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 from aiogram.filters import CommandStart
-from aiogram.types import Message
+from aiogram.types import Message, EphemeralMessageParameters
 from dotenv import load_dotenv
 
 media_groups = {}  # временное хранилище
@@ -30,13 +30,19 @@ FTHIS = re.compile(r'^Это\s+(.+?)\s+(\d+)$', re.I)
 #Start
 async def on_startup(bot: Bot) -> None:
     await bot.send_message(chat_id=DEVID, text="System: ONLINE")
+
 @dp.message(F.text == "кто я")
 async def handle_query(message: Message):
     if (F.from_user.id == DEVID):
         status = "ADMIN"
     else:
         status = "USER"
-    await message.answer(f"{status}")
+    
+    await bot.send_message(
+        chat_id=message.chat.id,
+        text=f"{status}",
+        receiver_user_id=message.from_user.id,
+    )
 
 @dp.message(F.photo)
 async def handle_photo(message: Message):
