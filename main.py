@@ -16,90 +16,114 @@ load_dotenv()
 
 TOKEN = os.getenv("key")
 DEV_ID = int(os.getenv("id"))
+STARTCHAT = int(os.getenv("startid"))
+ADMIN_ID = {
+    int(x.strip())
+    for x in os.getenv("ADMIN_ID", "").split(",")
+    if x.strip()
+}
+
 
 dp = Dispatcher()
 router = Router()
 
-WHERE = re.compile(r'^Где\s+(?P<subject>\S+)$',                   re.I)
-FWHERE= re.compile(r'^Где\s+(?P<subject>\S+)\s+(?P<number>\d+)$', re.I)
-
-THIS  = re.compile(r'^Это\s+(?P<subject>\S+)$',                   re.I)
-FTHIS = re.compile(r'^Это\s+(?P<subject>\S+)\s+(?P<number>\d+)$', re.I)
-
-#Start
-async def on_startup(bot: Bot) -> None:
-    await bot.send_message(chat_id=DEV_ID, text="Готов к работе!")
-
-@router.message(F.text == "кто я")
-async def who_am_i(message: Message, bot: Bot):
-    is_admin = message.from_user.id == DEV_ID
-    status = "Право имеющий" if is_admin else "Чудо"
-    await bot.send_message(
+def common(message: Message) -> dict:
+    return dict(
         chat_id=message.chat.id,
-        text=f"{status}",
-        receiver_user_id=message.from_user.id,
     )
 
+def hidden(message: Message) -> dict:
+    return dict(
+        chat_id=message.chat.id,
+        ephemeral_message_parameters=EphemeralMessageParameters(
+            receiver_user_id=message.from_user.id
+        ),
+    )
+
+WHERE = re.compile(r'^Где\s+(?P<subject>\S+)$', re.I)
+FWHERE = re.compile(r'^Где\s+(?P<subject>\S+)\s+(?P<number>\d+)$', re.I)
+
+THIS = re.compile(r'^Это\s+(?P<subject>\S+)$', re.I)
+FTHIS = re.compile(r'^Это\s+(?P<subject>\S+)\s+(?P<number>\d+)$', re.I)
+
+async def on_startup(bot: Bot) -> None:
+    await bot.send_message(chat_id=STARTCHAT, text="Готов к работе!")
+
+@router.message(F.text.lower() == "кто я")
+async def who_am_i(message: Message, bot: Bot):
+    if message.from_user.id in ADMIN_ID:
+        is_admin = True
+
+    status = "Право имеющий" if is_admin else f"Чудо"
+
+    await bot.send_message(
+        **common(message),
+        text=f"{status}"
+    )
+
+'''
 @router.message(F.photo)
 async def handle_photo(message: Message):
     if message.media_group_id:
         await message.answer(f"Это группа фоток, их id{message.media_group_id}")
     else:
         await message.answer("Логика добавления")
+'''
 
 @router.message(F.reply_to_message, F.text.regexp(THIS ).as_("match"))
 @router.message(F.reply_to_message, F.text.regexp(FTHIS).as_("match"))
 async def handle_add(message: Message, match: re.Match, bot: Bot):
-    
+
     data = match.groupdict()
     subject = data["subject"]
 
     original = message.reply_to_message
-    orgmes = original.message_id
-
-    reply_parameters=ReplyParameters(
-        message_id=message.message_id,
-        allow_sending_without_reply=True,
-    )
+    link = original.message_id
 
     param1 = match.group(1)
     if "number" in data:                      
         param2 = int(match.group(2))
-        await bot.send_message(
-            chat_id=message.chat.id,
+        await bot.send_message(**common(message),
             text=f"Фиксирую {param1}, по индексу {param2}",
         )
     else:
-        await bot.send_message(
-            chat_id=message.chat.id,
-            text=f"Фиксирую {param1}",
+        await bot.send_message(**common(message),
+            text=f"Фиксирую {param1}",  
         )
     
 @router.message(F.text.regexp(FWHERE).as_("match"))
 @router.message(F.text.regexp(WHERE).as_("match"))
 async def handle_query(message: Message, match: re.Match, bot: Bot):
     data = match.groupdict()
-    
-    common = dict(
-        chat_id=message.chat.id,
-        ephemeral_message_parameters=EphemeralMessageParameters(receiver_user_id=message.from_user.id),
-    )
-
     if "number" in data:                      
-        await bot.send_message(**common, text=f'Ищу {data["subject"]}, по индексу {data["number"]}')
-    else:
-        await bot.send_message(**common, text=f'Ищу {data["subject"]}')
+        await bot.send_message(**hidden(message), text=f'Ищу {data["subject"]}, по индексу {data["number"]}')
         await bot.delete_message(chat_id=message.chat.id, message_id=message.message_id)
+    else:
+        await bot.send_message(**hidden(message), text=f'Ищу {data["subject"]}')
+        
 
-
-@router.message(F.from_user.id == DEV_ID, F.text == "ребут")
+@router.message(F.text.lower() == "ребут")
 async def admin_stop(message: Message):
-    await message.answer("System: REBOOT SEQUENCE")
-    await dp.stop_polling()
+    if message.from_user.id in ADMIN_ID:
+        await message.answer("System: REBOOT SEQUENCE")
+        await dp.stop_polling()
 
 @router.message(CommandStart())
-async def command_start_handler(message: Message) -> None:
-    await message.answer(f"Приветики!, я работаю)")
+async def command_start_handler(message: Message, bot: Bot) -> None:
+    if message.from_user.id in ADMIN_ID:
+        is_admin = True
+
+    if is_admin:
+        await bot.send_message(
+            **hidden(message),
+            text=f"message.chat.id = {message.chat.id}"
+        )
+    else:
+        await bot.send_message(
+            **common(message),
+            text=f"Привет дружок пирожок, как дела у тебя?) Твой номер {message.from_user.id}"
+        )
+
 
 async def main() -> None:
     bot = Bot(token=TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
@@ -113,13 +137,16 @@ if __name__ == "__main__":
     asyncio.run(main())
 
 
+'''
+образно, логика работы бота такая:
+приходит сообщение с файлами, или с изображением.
+бот автоматически видет что сообщение с файлами, и спрашивает, что это
+пользователь пишет ""название учебного предмета" [номер по порядку данного материала]"
+Бот проверяет на правильность данных (при неправильном написании, или отсуствии данной категории он предлагает автоматический выбор из списка, непосредственно из существующих тэгов, или сохраняет новый).
+Проверив, он сохраняет данные в данную категорию с ссылкой на сообщение.
 
-#образно, логика работы бота такая:
-#приходит сообщение с файлами, или с изображением.
-#бот автоматически видет что сообщение с файлами, и спрашивает, что это
-#пользователь пишет ""название учебного предмета" [номер по порядку данного материала]"
-#Бот проверяет на правильность данных (при неправильном написании, или отсуствии данной категории он предлагает автоматический выбор из списка, непосредственно из существующих тэгов, или сохраняет новый).
-#Проверив, он сохраняет данные в данную категорию с ссылкой на сообщение.
-#
-#Спустя время, пользователь может отправить сообщение "Где "название предмета" "номер"" и бот должен отправить ссылку на сообщение с данной подписью
-#или "Где "учебный предмет"" и он автоматически создаст пронумерованный список из ссылок на сообщения
+Спустя время, пользователь может отправить сообщение "Где "название предмета" "номер"" и бот должен отправить ссылку на сообщение с данной подписью
+или "Где "учебный предмет"" и он автоматически создаст пронумерованный список из ссылок на сообщения
+
+
+'''
