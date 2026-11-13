@@ -3,8 +3,6 @@ import os
 import asyncio
 from dotenv import load_dotenv
 
-def dbdata() -> dict:
-
 
 def get_db_path() -> str:
     load_dotenv()
@@ -32,38 +30,43 @@ async def add_material(
     db_path
 ) -> int | bool:
     async with aiosqlite.connect(db_path) as db:
-        if (search_material(subject, number, chat_id) is None):
+        if (await search_material(subject, number, chat_id, db_path) is None):
             cursor = await db.execute(
-                "UPDATE InfoTable SET link = ?, user_chat = ? "
-                "WHERE Tag = ? AND element_id = ?",
+                "INSERT INTO InfoTable (link, user_chat, Tag, element_id) \
+                VALUES (?, ?, ?, ?)",
                 (message_id, chat_id, subject, number))
             new_id = cursor.lastrowid
             await db.commit()
-            return new_id
+            return True
         else:
-            return False
+            search = await search_material(subject, number, chat_id, db_path)
+            return search["id"]
 
 
 async def update_material(
     message_id: int,
-    old_id: int
+    id: int,
+    db_path
 ) -> int:
     async with aiosqlite.connect(db_path) as db:
         cursor = await db.execute(
-            "UPDATE InfoTable SET id = ?, element_id = message_id",
-            (old_id, message_id))
+            "UPDATE InfoTable SET link = ? WHERE id = ?",
+            (message_id, id))
         await db.commit()
-    return old_id
+    return id
 
 
 async def search_material(
     subject: str,
     number: int,
-    chat_id: int
+    chat_id: int,
+    db_path
 ) -> dict | None:
     async with aiosqlite.connect(db_path) as db:
+        db.row_factory = aiosqlite.Row
         cursor = await db.execute(
-            "SELECT id FROM InfoTable WHERE Tag = ? "
+            "SELECT id, link "
+            "FROM InfoTable WHERE Tag = ? "
             "AND element_id = ? AND user_chat = ?",
             (subject, number, chat_id)
         )
@@ -72,7 +75,6 @@ async def search_material(
             return None
         else:
             return dict(row)
-
 
 if __name__ == "__main__":
     asyncio.run(init_db(get_db_path()))
