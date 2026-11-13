@@ -9,7 +9,7 @@ from aiogram import Bot, Dispatcher, Router, F, html
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 from aiogram.filters import CommandStart
-from aiogram.types import Message, EphemeralMessageParameters, ReplyParameters
+from aiogram.types import Message, EphemeralMessageParameters, ReplyParameters, InlineKeyboardMarkup, InlineKeyboardButton
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -22,6 +22,16 @@ ADMIN_ID = {
     for x in os.getenv("ADMIN_ID", "").split(",")
     if x.strip()
 }
+
+
+def kb() -> dict:
+    kb = InlineKeyboardMarkup(inline_keyboard=[
+        [
+            InlineKeyboardButton(text="Заменить", callback_data="replace"),
+            InlineKeyboardButton(text="Оставить старую",
+                                 callback_data="cancel")
+        ]
+    ])
 
 
 dp = Dispatcher()
@@ -56,6 +66,7 @@ async def on_startup(bot: Bot) -> None:
 
 @router.message(F.text.lower() == "кто я")
 async def who_am_i(message: Message, bot: Bot):
+
     if message.from_user.id in ADMIN_ID:
         is_admin = True
 
@@ -90,10 +101,22 @@ async def handle_add(message: Message, match: re.Match, bot: Bot):
     param1 = match.group(1)
     if "number" in data:
         param2 = int(match.group(2))
-        await bot.send_message(
-            **common(message),
-            text=f"Фиксирую {param1}, по индексу {param2}"
+        if (await database.add_material(
+            data["subject"],
+            data["number"],
+            message.chat.id,
+            link
         )
+        ):
+            await bot.send_message(
+                **common(message),
+                text=f"Фиксирую {param1}, по индексу {param2}"
+            )
+        else:
+            await bot.send_message(
+                **hidden,
+                reply_markup=kb
+            )
     else:
         await bot.send_message(
             **common(message),
@@ -101,9 +124,14 @@ async def handle_add(message: Message, match: re.Match, bot: Bot):
         )
 
 
+@router.message()
+async def handle_choose(message: Message):
+    Print("i cand move it,\nmove it anymore...")
+
+
 @router.message(F.text.regexp(FWHERE).as_("match"))
 @router.message(F.text.regexp(WHERE).as_("match"))
-async def handle_query(message: Message, match: re.Match, bot: Bot):
+async def handle_search(message: Message, match: re.Match, bot: Bot):
     data = match.groupdict()
 
     if "number" in data:
