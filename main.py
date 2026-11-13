@@ -9,7 +9,7 @@ from aiogram import Bot, Dispatcher, Router, F, html
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 from aiogram.filters import CommandStart
-from aiogram.types import Message, EphemeralMessageParameters
+from aiogram.types import Message, EphemeralMessageParameters, ReplyParameters
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -47,31 +47,27 @@ async def handle_photo(message: Message):
     else:
         await message.answer("Логика добавления")
 
-@router.message(F.text.regexp(FTHIS).as_("match"))
-async def handle_query(message: Message, match: re.Match, bot: Bot):
-    if message.reply_to_message is not None:
-        param1 = match.group(1)
-        param2 = int(match.group(2))
-        await message.answer(f"фиксирую: <b>{param1}</b>, число: <b>{param2}</b>")
 
-@dp.message(F.reply_to_message)
-async def handle_reply(message: Message):
+@router.message(F.reply_to_message, F.text.regexp(THIS).as_("match"))
+@router.message(F.reply_to_message, F.text.regexp(FWHERE).as_("match"))
+async def handle_add(message: Message, match: re.Match, bot: Bot):
     original = message.reply_to_message
-    match = FTHIS.match(message.text)  
-    if match:
-        param1 = match.group(1)
-        await message.answer(f"фиксирую: <b>{param1}</b>")
-    else:
-        match = THIS.match(message.text)
-        if match
-        await message.answer(f"фиксирую: <b>{param1}</b>, число: <b>{param2}</b>")
-
-
-@router.message(F.text.regexp(THIS).as_("match"))
-async def handle_query(message: Message, match: re.Match, bot: Bot):
-    if message.reply_to_message is not None:
-        param1 = match.group(1)
-        await message.answer(f"Фиксирую: <b>{param1}</b>")
+    reply_parameters=ReplyParameters(message_id=original.message_id)
+    param1 = match.group(1)
+    if match.re is THIS:
+        await bot.send_message(
+            allow_sending_without_reply=True,
+            chat_id=message.chat.id,
+            reply_to_message_id=original,
+            text=f"Фиксирую {param1}",
+        )
+    elif match.re is FWHERE:
+        await bot.send_message(
+            allow_sending_without_reply=True,
+            chat_id=message.chat.id,
+            reply_to_message_id=original,
+            text=f"Фиксирую {param1}, по индексу {param2}",
+        )
 
 @router.message(F.text.regexp(FWHERE).as_("match"))
 async def handle_query(message: Message, match: re.Match, bot: Bot):
