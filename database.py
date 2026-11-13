@@ -3,11 +3,12 @@ import os
 import asyncio
 from dotenv import load_dotenv
 
+def dbdata() -> dict:
+
 
 def get_db_path() -> str:
     load_dotenv()
     return os.getenv("DB_PATH", "info.db")
-
 
 async def init_db(db_path):
     async with aiosqlite.connect(db_path) as db:
@@ -29,24 +30,48 @@ async def add_material(
     chat_id: int,
     message_id: int,
     db_path
-) -> int:
+) -> int | bool:
     async with aiosqlite.connect(db_path) as db:
-        cursor = await db.execute(
-            "INSERT INTO InfoTable (Tag, element_id, user_chat, link) \
-            VALUES (?, ?, ?, ?)",
-            (subject, number, chat_id, message_id))
-        new_id = cursor.lastrowid
-        await db.commit()
-        return new_id
+        if (search_material(subject, number, chat_id) is None):
+            cursor = await db.execute(
+                "UPDATE InfoTable SET link = ?, user_chat = ? "
+                "WHERE Tag = ? AND element_id = ?",
+                (message_id, chat_id, subject, number))
+            new_id = cursor.lastrowid
+            await db.commit()
+            return new_id
+        else:
+            return False
 
 
 async def update_material(
+    message_id: int,
+    old_id: int
+) -> int:
+    async with aiosqlite.connect(db_path) as db:
+        cursor = await db.execute(
+            "UPDATE InfoTable SET id = ?, element_id = message_id",
+            (old_id, message_id))
+        await db.commit()
+    return old_id
+
+
+async def search_material(
     subject: str,
     number: int,
-    chat_id: int,
-    message_id: int
-):
-    return "SavedNew"
+    chat_id: int
+) -> dict | None:
+    async with aiosqlite.connect(db_path) as db:
+        cursor = await db.execute(
+            "SELECT id FROM InfoTable WHERE Tag = ? "
+            "AND element_id = ? AND user_chat = ?",
+            (subject, number, chat_id)
+        )
+        row = await cursor.fetchone()
+        if row is None:
+            return None
+        else:
+            return dict(row)
 
 
 if __name__ == "__main__":

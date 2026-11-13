@@ -31,10 +31,11 @@ ADMIN_ID = {
 }
 
 
-def kb() -> InlineKeyboardMarkup:
+def kb(link: int) -> InlineKeyboardMarkup:
     kb = InlineKeyboardMarkup(inline_keyboard=[
         [
-            InlineKeyboardButton(text="Заменить", callback_data="replace"),
+            InlineKeyboardButton(
+                text="Заменить", callback_data="replace:{link}"),
             InlineKeyboardButton(text="Оставить старую",
                                  callback_data="cancel")
         ]
@@ -80,28 +81,11 @@ async def who_am_i(message: Message, bot: Bot):
 
     status = "Право имеющий" if is_admin else f"Чудо"
 
-    await bot.send_message( 
+    await bot.send_message(
         **common(message),
         text=f"{status}"
     )
 
-'''
-@router.message(F.photo)
-async def handle_photo(message: Message):
-    if message.media_group_id:
-        await message.answer(f"Это группа фоток, \
-        их id{message.media_group_id}")
-    else:
-        await message.answer("Логика добавления")
-'''
-
-'''
-cursor = await db.execute(
-            "INSERT INTO InfoTable (Tag, element_id, user_chat, link) \
-            VALUES (?, ?, ?, ?)",
-            (subject, number, chat_id, message_id))
-        new_id = cursor.lastrowid
-'''
 
 @router.message(F.reply_to_message, F.text.regexp(THIS).as_("match"))
 @router.message(F.reply_to_message, F.text.regexp(FTHIS).as_("match"))
@@ -115,13 +99,12 @@ async def handle_add(message: Message, match: re.Match, bot: Bot):
 
     if "number" in data:
         if (await database.add_material(
-            data["subject"],
+            data["subject"].upper(),
             int(data["number"]),
             message.chat.id,
             link,
             database.get_db_path()
-        )
-        ):
+        ) is not False):
             await bot.send_message(
                 **common(message),
                 text=f'Фиксирую {data["subject"]}, по индексу {data["number"]}'
@@ -130,20 +113,32 @@ async def handle_add(message: Message, match: re.Match, bot: Bot):
             await bot.send_message(
                 **hidden(message),
                 text="Данная ячейка уже занята, хочешь её заменить?",
-                reply_markup=kb()
+                reply_markup=kb(link)
             )
     else:
         await bot.send_message(
             **common(message),
-            text=f'Фиксирую {data["subject"]}'
+            text=f'Фиксирую {data["subject"]}, \
+            но не вижу номера, повтори с номером пожалуйста <3'
         )
 
 
-@router.callback_query()
-async def handle_choose(callback: CallbackQuery):
-    await Callback.answer()
+@router.callback_query(F.data.startswith("replace:"))
+async def handle_replace(callback: CallbackQuery):
+    await callback.answer()
+    parts = callback.data.split(":")
+    link = int(parts[1])
+    database.update_material()
+    await bot.send_message(
+        **hidden(message),
+        text=f'Я заменил данные!'
+    )
 
 
+@router.callback_query(F.data == "cancel")
+async def handle_cancel(callback: CallbackQuery):
+    await callback.answer()
+    await callback.message.delete()
 
 
 @router.message(F.text.regexp(FWHERE).as_("match"))
@@ -152,14 +147,22 @@ async def handle_search(message: Message, match: re.Match, bot: Bot):
     data = match.groupdict()
 
     if "number" in data:
-        await bot.send_message(
-            **hidden(message),
-            text=f'Ищу {data["subject"]}, по индексу {data["number"]}'
-        )
-        await bot.delete_message(
-            chat_id=message.chat.id,
-            message_id=message.message_id
-        )
+        if (database.search_material(data["subject"].upper,
+                                     data["number"],
+                                     message.chat.id
+                                     ) is not None):
+            await bot.send_message(
+                **hidden(message),
+                text=f'Я нашёл \
+                {data["subject"].upper()}, \
+                по индексу {data["number"]} \
+                \n\n<a href="{url}">Перейти к материалу</a>'
+
+            )
+            await bot.delete_message(
+                chat_id=message.chat.id,
+                message_id=message.message_id
+            )
     else:
         await bot.send_message(
             **hidden(message),
@@ -207,18 +210,19 @@ if __name__ == "__main__":
 
 
 '''
-образно, логика работы бота такая:
-приходит сообщение с файлами, или с изображением.
-бот автоматически видет что сообщение с файлами, и спрашивает, что это
-пользователь пишет 
-""название учебного предмета" [номер по порядку данного материала]"
-Бот проверяет на правильность данных (при неправильном написании,
-или отсуствии данной категории он предлагает автоматический выбор из списка,
-непосредственно из существующих тэгов, или сохраняет новый).
-Проверив, он сохраняет данные в данную категорию с ссылкой на сообщение.
+@router.message(F.photo)
+async def handle_photo(message: Message):
+    if message.media_group_id:
+        await message.answer(f"Это группа фоток, \
+        их id{message.media_group_id}")
+    else:
+        await message.answer("Логика добавления")
+'''
 
-Спустя время, пользователь может отправить сообщение "Где "название предмета" "номер""
- и бот должен отправить ссылку на сообщение с данной подписью
-или "Где "учебный предмет"" и он автоматически создаст пронумерованный список из ссылок на сообщения
-
+'''
+cursor = await db.execute(
+            "INSERT INTO InfoTable (Tag, element_id, user_chat, link) \
+            VALUES (?, ?, ?, ?)",
+            (subject, number, chat_id, message_id))
+        new_id = cursor.lastrowid
 '''
