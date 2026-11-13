@@ -20,11 +20,11 @@ DEV_ID = int(os.getenv("id"))
 dp = Dispatcher()
 router = Router()
 
-WHERE = re.compile(r'^Где\s+(\S+)$',         re.I)
-FWHERE= re.compile(r'^Где\s+(\S+)\s+(\d+)$', re.I)
+WHERE  = re.compile(r'^Где\s+(?P<subject>\S+)$',                   re.I)
+FWHERE = re.compile(r'^Где\s+(?P<subject>\S+)\s+(?P<number>\d+)$', re.I)
 
-THIS  = re.compile(r'^Это\s+(\S+)$',         re.I)
-FTHIS = re.compile(r'^Это\s+(\S+)\s+(\d+)$', re.I)
+THIS   = re.compile(r'^Это\s+(?P<subject>\S+)$',                   re.I)
+FTHIS  = re.compile(r'^Это\s+(?P<subject>\S+)\s+(?P<number>\d+)$', re.I)
 
 #Start
 async def on_startup(bot: Bot) -> None:
@@ -47,12 +47,18 @@ async def handle_photo(message: Message):
     else:
         await message.answer("Логика добавления")
 
-
-@router.message(F.reply_to_message, F.text.regexp(THIS).as_("match"))
+@router.message(F.reply_to_message, F.text.regexp(THIS  ).as_("match"))
 @router.message(F.reply_to_message, F.text.regexp(FWHERE).as_("match"))
 async def handle_add(message: Message, match: re.Match, bot: Bot):
+    if match.re is THIS:
+        print(f"Сообщение принято с 1 им параметром")
+    elif match.re is FWHERE:
+        print(f"Сообщение принято с 2 мя параметрами")
     original = message.reply_to_message
-    reply_parameters=ReplyParameters(message_id=original.message_id)
+    reply_parameters=ReplyParameters(
+        message_id=original.message_id,
+        allow_sending_without_reply=True,
+    )
     param1 = match.group(1)
     if match.re is THIS:
         await bot.send_message(
@@ -61,6 +67,7 @@ async def handle_add(message: Message, match: re.Match, bot: Bot):
             text=f"Фиксирую {param1}",
         )
     elif match.re is FWHERE:
+        param2 = int(match.group(2))
         await bot.send_message(
             allow_sending_without_reply=True,
             chat_id=message.chat.id,
@@ -97,6 +104,7 @@ async def command_start_handler(message: Message) -> None:
 
 async def main() -> None:
     bot = Bot(token=TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
+    await bot.delete_webhook(drop_pending_updates=True)
     await dp.start_polling(bot)
 
 if __name__ == "__main__":
