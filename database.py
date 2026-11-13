@@ -1,33 +1,55 @@
-import sqlite3
+import aiosqlite
 import os
+import asyncio
 from dotenv import load_dotenv
+
 
 def get_db_path() -> str:
     load_dotenv()
-    return os.getenv("DB_PATH", "app.db")
+    return os.getenv("DB_PATH", "info.db")
 
 
-def init_db(db_path: str) -> None:
+async def init_db(db_path):
     connection = None
-    try:
-        connection = sqlite3.connect(db_path)
-        connection.row_factory = sqlite3.Row
-        cursor = connection.cursor()
-        cursor.execute("""
+    async with aiosqlite.connect(db_path) as db:
+        await db.execute("""
             CREATE TABLE IF NOT EXISTS InfoTable (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 user_id INTEGER NOT NULL,
-                user_chats 
+                user_chats INTEGER NOT NULL,
+                Tag TEXT NOT NULL,
+                element_id INTEGER NOT NULL
             )
         """)
-        connection.commit()
-    except Exception as e:
-        print("❌ Ошибка подключения или запроса:", e)
-    finally:
-        if connection is not None:
-            connection.close()
-            print("Соединение закрыто.")
+        await db.commit()
+    pass
+
+
+async def add_material(
+    subject: str,
+    number: int,
+    chat_id: int,
+    message_id: int,
+    db_path
+) -> str:
+    async with aiosqlite.connect(db_path) as db:
+        cursor = await db.execute(
+            "INSERT INTO InfoTable (subject_id, number, chat_id, message_id) \
+            VALUES (?, ?, ?, ?)",
+            (subject, number, chat_id, message_id))
+        new_id = cursor.lastwordid
+        await db.commit()
+        return "Saved"
+
+
+async def update_material(
+    subject: str,
+    number: int,
+    chat_id: int,
+    message_id: int
+):
+    return "SavedNew"
 
 
 if __name__ == "__main__":
-    init_db(get_db_path())
+    asyncio.run(init_db(get_db_path()))

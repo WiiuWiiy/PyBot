@@ -9,7 +9,13 @@ from aiogram import Bot, Dispatcher, Router, F, html
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 from aiogram.filters import CommandStart
-from aiogram.types import Message, EphemeralMessageParameters, ReplyParameters, InlineKeyboardMarkup, InlineKeyboardButton
+from aiogram.types import (
+    Message,
+    EphemeralMessageParameters,
+    ReplyParameters,
+    InlineKeyboardMarkup,
+    InlineKeyboardButton
+)
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -24,7 +30,7 @@ ADMIN_ID = {
 }
 
 
-def kb() -> dict:
+def kb() -> InlineKeyboardMarkup:
     kb = InlineKeyboardMarkup(inline_keyboard=[
         [
             InlineKeyboardButton(text="Заменить", callback_data="replace"),
@@ -32,6 +38,7 @@ def kb() -> dict:
                                  callback_data="cancel")
         ]
     ])
+    return kb
 
 
 dp = Dispatcher()
@@ -98,35 +105,33 @@ async def handle_add(message: Message, match: re.Match, bot: Bot):
     original = message.reply_to_message
     link = original.message_id
 
-    param1 = match.group(1)
     if "number" in data:
-        param2 = int(match.group(2))
         if (await database.add_material(
             data["subject"],
-            data["number"],
+            int(data["number"]),
             message.chat.id,
             link
         )
         ):
             await bot.send_message(
                 **common(message),
-                text=f"Фиксирую {param1}, по индексу {param2}"
+                text=f"Фиксирую {data["subject"]}, по индексу {data["number"]}"
             )
         else:
             await bot.send_message(
-                **hidden,
-                reply_markup=kb
+                **hidden(message),
+                reply_markup=kb()
             )
     else:
         await bot.send_message(
             **common(message),
-            text=f"Фиксирую {param1}"
+            text=f"Фиксирую {data["subject"]}"
         )
 
 
-@router.message()
+@router.callback_query()
 async def handle_choose(message: Message):
-    Print("i cand move it,\nmove it anymore...")
+    print("i cand move it,\nmove it anymore...")
 
 
 @router.message(F.text.regexp(FWHERE).as_("match"))
