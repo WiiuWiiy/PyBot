@@ -75,9 +75,6 @@ async def handle_add(message: Message, match: re.Match, bot: Bot):
             text=f"Фиксирую {param1}",
         )
     
-
-
-    
 @router.message(F.text.regexp(FWHERE).as_("match"))
 @router.message(F.text.regexp(WHERE).as_("match"))
 async def handle_query(message: Message, match: re.Match, bot: Bot):
@@ -93,13 +90,14 @@ async def handle_query(message: Message, match: re.Match, bot: Bot):
         param2 = int(match.group(2))
         await bot.send_message(
             chat_id=message.chat.id,
-            text=f"Ищу {param1}, по индексу {param2}",
+            text=f"Ищу {data["subject"]}, по индексу {data["number"]}",
             receiver_user_id=message.from_user.id,
         )
+        await bot.delete_message(chat_id=message.chat.id, message_id=message.message_id)
     else:
         await bot.send_message(
             chat_id=message.chat.id,
-            text=f"Ищу {param1}",
+            text=f"Ищу {data["subject"]}",
             receiver_user_id=message.from_user.id,
         )
     
