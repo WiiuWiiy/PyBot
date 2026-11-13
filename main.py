@@ -147,10 +147,12 @@ async def handle_search(message: Message, match: re.Match, bot: Bot):
     data = match.groupdict()
 
     if "number" in data:
-        if (database.search_material(data["subject"].upper,
-                                     data["number"],
-                                     message.chat.id
-                                     ) is not None):
+        result = database.search_material(data["subject"].upper,
+                                          data["number"],
+                                          message.chat.id
+                                          )
+        if (result is not None):
+            link = resul["link"]
             await bot.send_message(
                 **hidden(message),
                 text=f'Я нашёл \
