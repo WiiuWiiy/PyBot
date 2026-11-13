@@ -63,12 +63,12 @@ def common(message: Message) -> dict:
 
 
 
-def kb(link: int, id: int) -> InlineKeyboardMarkup:
+def kb(link: int, id: int, chat: int) -> InlineKeyboardMarkup:
     kb = InlineKeyboardMarkup(inline_keyboard=[
         [
             InlineKeyboardButton(
                 text="Заменить",
-                callback_data=f"replace:{link}:{id}"
+                callback_data=f"replace:{link}:{id}:{chat}"
             ),
             InlineKeyboardButton(text="Оставить старую",
                                  callback_data="cancel")
@@ -123,7 +123,7 @@ async def handle_add(message: Message, match: re.Match, bot: Bot):
             send = await bot.send_message(
                 chat_id=message.chat.id,
                 text="Данная ячейка уже занята, хочешь её заменить?",
-                reply_markup=kb(link, result)
+                reply_markup=kb(link, result, message.chat.id)
             )
     else:
         send = await bot.send_message(
@@ -134,17 +134,20 @@ async def handle_add(message: Message, match: re.Match, bot: Bot):
     asyncio.create_task(delete_fingerprint(bot, message, send))
 
 @router.callback_query(F.data.startswith("replace:"))
-async def handle_replace(callback: CallbackQuery, bot: Bot, message: Message):
+async def handle_replace(callback: CallbackQuery, bot: Bot):
     await callback.answer()
     parts = callback.data.split(":")
     link = int(parts[1])
-    old_id = int(parts[2])
-    await database.update_material(link, old_id, database.get_db_path())
+    id = int(parts[2])
+    chat = int(parts[3])
+    await database.update_material(link, id, database.get_db_path())
     send = await callback.bot.send_message(
-        chat_id=message.chat.id,
+        chat_id=chat,
         text=f'Я заменил данные!'
     )
-    asyncio.create_task(delete_fingerprint(bot, message, send))
+    await asyncio.sleep(5)
+    await bot.delete_message(chat_id=send.chat.id,
+                             message_id=send.message_id)
 
 
 @router.callback_query(F.data == "cancel")
