@@ -58,14 +58,12 @@ async def handle_add(message: Message, match: re.Match, bot: Bot):
         await bot.send_message(
             allow_sending_without_reply=True,
             chat_id=message.chat.id,
-            reply_to_message_id=original,
             text=f"Фиксирую {param1}",
         )
     elif match.re is FWHERE:
         await bot.send_message(
             allow_sending_without_reply=True,
             chat_id=message.chat.id,
-            reply_to_message_id=original,
             text=f"Фиксирую {param1}, по индексу {param2}",
         )
 
