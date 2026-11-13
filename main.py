@@ -20,11 +20,11 @@ DEV_ID = int(os.getenv("id"))
 dp = Dispatcher()
 router = Router()
 
-WHERE  = re.compile(r'^Где\s+(?P<subject>\S+)$',                   re.I)
-FWHERE = re.compile(r'^Где\s+(?P<subject>\S+)\s+(?P<number>\d+)$', re.I)
+WHERE = re.compile(r'^Где\s+(?P<subject>\S+)$',                   re.I)
+FWHERE= re.compile(r'^Где\s+(?P<subject>\S+)\s+(?P<number>\d+)$', re.I)
 
-THIS   = re.compile(r'^Это\s+(?P<subject>\S+)$',                   re.I)
-FTHIS  = re.compile(r'^Это\s+(?P<subject>\S+)\s+(?P<number>\d+)$', re.I)
+THIS  = re.compile(r'^Это\s+(?P<subject>\S+)$',                   re.I)
+FTHIS = re.compile(r'^Это\s+(?P<subject>\S+)\s+(?P<number>\d+)$', re.I)
 
 #Start
 async def on_startup(bot: Bot) -> None:
@@ -47,51 +47,63 @@ async def handle_photo(message: Message):
     else:
         await message.answer("Логика добавления")
 
-@router.message(F.reply_to_message, F.text.regexp(THIS  ).as_("match"))
-@router.message(F.reply_to_message, F.text.regexp(FWHERE).as_("match"))
+@router.message(F.reply_to_message, F.text.regexp(THIS ).as_("match"))
+@router.message(F.reply_to_message, F.text.regexp(FTHIS).as_("match"))
 async def handle_add(message: Message, match: re.Match, bot: Bot):
-    if match.re is THIS:
-        print(f"Сообщение принято с 1 им параметром")
-    elif match.re is FWHERE:
-        print(f"Сообщение принято с 2 мя параметрами")
+    
+    data = match.groupdict()
+    subject = data["subject"]
+
     original = message.reply_to_message
+    orgmes = original.message_id
+
     reply_parameters=ReplyParameters(
-        message_id=original.message_id,
+        message_id=message.message_id,
         allow_sending_without_reply=True,
     )
+
     param1 = match.group(1)
-    if match.re is THIS:
-        await bot.send_message(
-            allow_sending_without_reply=True,
-            chat_id=message.chat.id,
-            text=f"Фиксирую {param1}",
-        )
-    elif match.re is FWHERE:
+    if "number" in data:                      
         param2 = int(match.group(2))
         await bot.send_message(
-            allow_sending_without_reply=True,
             chat_id=message.chat.id,
             text=f"Фиксирую {param1}, по индексу {param2}",
         )
+    else:
+        await bot.send_message(
+            chat_id=message.chat.id,
+            text=f"Фиксирую {param1}",
+        )
+    
 
+
+    
 @router.message(F.text.regexp(FWHERE).as_("match"))
-async def handle_query(message: Message, match: re.Match, bot: Bot):
-    param1 = match.group(1)
-    param2 = int(match.group(2))
-    await bot.send_message(
-        chat_id=message.chat.id,
-        text=f"Ищу {param1}, по индексу {param2}, message_id {message.message_id}",
-        receiver_user_id=message.from_user.id,
-    )
-
 @router.message(F.text.regexp(WHERE).as_("match"))
 async def handle_query(message: Message, match: re.Match, bot: Bot):
-    param1 = match.group(1)
-    await bot.send_message(
-        chat_id=message.chat.id,
-        text=f"Ищу {param1}",
-        receiver_user_id=message.from_user.id,
+    data = match.groupdict()
+    subject = data["subject"]
+
+    reply_parameters=ReplyParameters(
+        message_id=message.message_id,
+        allow_sending_without_reply=True,
     )
+
+    if "number" in data:                      
+        param2 = int(match.group(2))
+        await bot.send_message(
+            chat_id=message.chat.id,
+            text=f"Ищу {param1}, по индексу {param2}",
+            receiver_user_id=message.from_user.id,
+        )
+    else:
+        await bot.send_message(
+            chat_id=message.chat.id,
+            text=f"Ищу {param1}",
+            receiver_user_id=message.from_user.id,
+        )
+    
+
 
 @router.message(F.from_user.id == DEV_ID, F.text == "ребут")
 async def admin_stop(message: Message):
