@@ -79,28 +79,17 @@ async def handle_add(message: Message, match: re.Match, bot: Bot):
 @router.message(F.text.regexp(WHERE).as_("match"))
 async def handle_query(message: Message, match: re.Match, bot: Bot):
     data = match.groupdict()
-    subject = data["subject"]
-
-    reply_parameters=ReplyParameters(
-        message_id=message.message_id,
-        allow_sending_without_reply=True,
+    
+    common = dict(
+        chat_id=message.chat.id,
+        ephemeral_message_parameters=EphemeralMessageParameters(receiver_user_id=message.from_user.id),
     )
 
     if "number" in data:                      
-        param2 = int(match.group(2))
-        await bot.send_message(
-            chat_id=message.chat.id,
-            text=f"Ищу {data["subject"]}, по индексу {data["number"]}",
-            receiver_user_id=message.from_user.id,
-        )
-        await bot.delete_message(chat_id=message.chat.id, message_id=message.message_id)
+        await bot.send_message(**common, text=f'Ищу {data["subject"]}, по индексу {data["number"]}')
     else:
-        await bot.send_message(
-            chat_id=message.chat.id,
-            text=f"Ищу {data["subject"]}",
-            receiver_user_id=message.from_user.id,
-        )
-    
+        await bot.send_message(**common, text=f'Ищу {data["subject"]}')
+        await bot.delete_message(chat_id=message.chat.id, message_id=message.message_id)
 
 
 @router.message(F.from_user.id == DEV_ID, F.text == "ребут")
