@@ -14,7 +14,8 @@ from aiogram.types import (
     EphemeralMessageParameters,
     ReplyParameters,
     InlineKeyboardMarkup,
-    InlineKeyboardButton
+    InlineKeyboardButton,
+    callback_query
 )
 from dotenv import load_dotenv
 
@@ -73,13 +74,13 @@ async def on_startup(bot: Bot) -> None:
 
 @router.message(F.text.lower() == "кто я")
 async def who_am_i(message: Message, bot: Bot):
-
+    is_admin = False
     if message.from_user.id in ADMIN_ID:
         is_admin = True
 
     status = "Право имеющий" if is_admin else f"Чудо"
 
-    await bot.send_message(
+    await bot.send_message( 
         **common(message),
         text=f"{status}"
     )
@@ -94,6 +95,13 @@ async def handle_photo(message: Message):
         await message.answer("Логика добавления")
 '''
 
+'''
+cursor = await db.execute(
+            "INSERT INTO InfoTable (Tag, element_id, user_chat, link) \
+            VALUES (?, ?, ?, ?)",
+            (subject, number, chat_id, message_id))
+        new_id = cursor.lastrowid
+'''
 
 @router.message(F.reply_to_message, F.text.regexp(THIS).as_("match"))
 @router.message(F.reply_to_message, F.text.regexp(FTHIS).as_("match"))
@@ -110,28 +118,32 @@ async def handle_add(message: Message, match: re.Match, bot: Bot):
             data["subject"],
             int(data["number"]),
             message.chat.id,
-            link
+            link,
+            database.get_db_path()
         )
         ):
             await bot.send_message(
                 **common(message),
-                text=f"Фиксирую {data["subject"]}, по индексу {data["number"]}"
+                text=f'Фиксирую {data["subject"]}, по индексу {data["number"]}'
             )
         else:
             await bot.send_message(
                 **hidden(message),
+                text="Данная ячейка уже занята, хочешь её заменить?",
                 reply_markup=kb()
             )
     else:
         await bot.send_message(
             **common(message),
-            text=f"Фиксирую {data["subject"]}"
+            text=f'Фиксирую {data["subject"]}'
         )
 
 
 @router.callback_query()
-async def handle_choose(message: Message):
-    print("i cand move it,\nmove it anymore...")
+async def handle_choose(callback: CallbackQuery):
+    await Callback.answer()
+
+
 
 
 @router.message(F.text.regexp(FWHERE).as_("match"))
@@ -164,8 +176,7 @@ async def admin_stop(message: Message):
 
 @router.message(CommandStart())
 async def command_start_handler(message: Message, bot: Bot) -> None:
-    if message.from_user.id in ADMIN_ID:
-        is_admin = True
+    is_admin = message.from_user.id in ADMIN_ID
 
     if is_admin:
         await bot.send_message(
