@@ -12,8 +12,6 @@ from aiogram.filters import CommandStart
 from aiogram.types import Message, EphemeralMessageParameters
 from dotenv import load_dotenv
 
-media_groups = {}  # временное хранилище
-
 load_dotenv()
 
 TOKEN = os.getenv("key")
@@ -22,10 +20,11 @@ DEV_ID = int(os.getenv("id"))
 dp = Dispatcher()
 router = Router()
 
-PATTERN  = re.compile(r'^Где\s+(\S+)$',        re.I)
-FPATTERN = re.compile(r'^Где\s+(\S+)\s+(\d+)$', re.I)
-THIS     = re.compile(r'^Это\s+(\S+)$',        re.I)
-FTHIS    = re.compile(r'^Это\s+(\S+)\s+(\d+)$', re.I)
+WHERE = re.compile(r'^Где\s+(\S+)$',         re.I)
+FWHERE= re.compile(r'^Где\s+(\S+)\s+(\d+)$', re.I)
+
+THIS  = re.compile(r'^Это\s+(\S+)$',         re.I)
+FTHIS = re.compile(r'^Это\s+(\S+)\s+(\d+)$', re.I)
 
 #Start
 async def on_startup(bot: Bot) -> None:
@@ -46,7 +45,7 @@ async def handle_photo(message: Message):
     if message.media_group_id:
         await message.answer(f"Это группа фоток, их id{message.media_group_id}")
     else:
-        await message.answer("Хочешь добавить его в базу данных?")
+        await message.answer("Логика добавления")
 
 @router.message(F.text.regexp(FTHIS).as_("match"))
 async def handle_query(message: Message, match: re.Match, bot: Bot):
@@ -55,13 +54,26 @@ async def handle_query(message: Message, match: re.Match, bot: Bot):
         param2 = int(match.group(2))
         await message.answer(f"фиксирую: <b>{param1}</b>, число: <b>{param2}</b>")
 
+@dp.message(F.reply_to_message)
+async def handle_reply(message: Message):
+    original = message.reply_to_message
+    match = FTHIS.match(message.text)  
+    if match:
+        param1 = match.group(1)
+        await message.answer(f"фиксирую: <b>{param1}</b>")
+    else:
+        match = THIS.match(message.text)
+        if match
+        await message.answer(f"фиксирую: <b>{param1}</b>, число: <b>{param2}</b>")
+
+
 @router.message(F.text.regexp(THIS).as_("match"))
 async def handle_query(message: Message, match: re.Match, bot: Bot):
     if message.reply_to_message is not None:
         param1 = match.group(1)
         await message.answer(f"Фиксирую: <b>{param1}</b>")
 
-@router.message(F.text.regexp(FPATTERN).as_("match"))
+@router.message(F.text.regexp(FWHERE).as_("match"))
 async def handle_query(message: Message, match: re.Match, bot: Bot):
     param1 = match.group(1)
     param2 = int(match.group(2))
@@ -71,7 +83,7 @@ async def handle_query(message: Message, match: re.Match, bot: Bot):
         receiver_user_id=message.from_user.id,
     )
 
-@router.message(F.text.regexp(PATTERN).as_("match"))
+@router.message(F.text.regexp(WHERE).as_("match"))
 async def handle_query(message: Message, match: re.Match, bot: Bot):
     param1 = match.group(1)
     await bot.send_message(

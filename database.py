@@ -15,8 +15,9 @@ def init_db(db_path: str) -> None:
         cursor = connection.cursor()
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS InfoTable (
-                tag INTEGER PRIMARY KEY AUTOINCREMENT,
-                id  INTEGER NOT NULL
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL,
+                user_chats 
             )
         """)
         connection.commit()
